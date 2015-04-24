@@ -1,0 +1,36 @@
+###
+## Computes total stroke length for a pattern
+##
+## D.E. Budzitowski 150876
+###
+
+###!!NOTE!! Does not currently account for non-adjacent stroke length###
+
+import math
+
+def strokeLen(size,key_pattern):
+
+    ## Check for invalid pattern
+    if key_pattern[1].pattern is 'X':
+        return 0
+
+    ##Variables##
+    pattern = key_pattern[1].pattern
+    patternList = key_pattern[1].pattern.split('.')
+
+    ##Check size arg
+    size = int(size)
+    if size is not 3 and size is not 4:
+        exit("stroke.py: size not supported!")
+    
+    sumStroke = 0.0
+    for p1,p2 in zip(patternList, patternList[1:]):
+        p1,p2 = int(p1),int(p2)
+        x1,y1 = p1/size,p1%size
+        x2,y2 = p2/size,p2%size
+        if size is 4: #Normalize
+            norm = 3.0/4.0
+            x1,y1,x2,y2 = x1*norm,y1*norm,x2*norm,y2*norm
+        sumStroke += math.sqrt((x1-x2)**2 + (y1-y2)**2)
+
+    return sumStroke

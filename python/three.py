@@ -1,14 +1,13 @@
 import csv, Image, ImageDraw, os, sys, getopt, collections
-from symmetry import horiz_symmetry
+from symmetry import horiz_symmetry, vert_symmetry
+from pattern import Pattern
+from record import record_CSV
+from stroke import strokeLen
 
 ##GLOBAL VARS###
 plist = {} #list of all patterns
 glist = {} #list of all guesses
 rlist = {} #list of all recalls
-plistDraw = {} #list of pattern drawings
-glistDraw = {} #list of guess drawings
-
-
 
 ###FUNCTIONS###
 def reset(filename):
@@ -38,24 +37,36 @@ def drawGrid(path):
 
 
 def storeGrid(im,row,col):
-    ##store patterns in appropriate lists (including invalid)
+    ##store patterns in appropriate lists (excluding invalid)
     parNum = row['Participant #']
     if "pattern" in col:
         patNum = col[7:]
         key = parNum + '-' + patNum
-        plist[key] = row[col]
-        plistDraw[key] = im
+        plist[key] = Pattern('p', row[col], im)
     elif "guess" in col:
         gNum = col[5:]
         key = parNum + '-' + gNum
-        glist[key] = row[col]
-        glistDraw[key] = im
+        glist[key] = Pattern('g', row[col], im)
     elif "recall" in col:
-        gNum = col[6:]
-        key = parNum + '-' + gNum
-        rlist[key] = row[col]
+        rNum = col[6:]
+        key = parNum + '-' + rNum
+        rlist[key] = Pattern('r', row[col], im)
     return
 
+def saveGuess(fn):
+    rootPath = "./analysis/"
+    rootPath += os.path.basename(os.path.dirname(fn)) + '/'
+    rootPath += os.path.splitext(os.path.basename(fn))[0] + "/guesses/"
+    
+    for key_pattern in glist.iteritems():
+        key = key_pattern[0]
+        partNum = key.split('-')[0]
+        pattNum = key.split('-')[1]
+        pattern = key_pattern[1]
+        path = rootPath + partNum + "guess" + pattNum + ".bmp"
+        print("Saving: " + path)
+        pattern.img.save(path)
+        glist[key].setImgPath(path) #save image path
 
 def invalidDataCheck(reader):
 
@@ -89,12 +100,12 @@ def path2Coords(path):
     #$print ret
     return ret
 
-
 def recall(fn):
 
     correctList = {} #counts the number of correct recalls per participant
     
     for key, pattern in plist.iteritems():
+        pattern = pattern.pattern
         partNum = key.split("-")[0]
         pattNum = key.split("-")[1]
 
@@ -107,13 +118,16 @@ def recall(fn):
 
         ##Check all 3 recall values for a user
         correct = False
-        rootPath = "./analysis/3x3/" + os.path.splitext(os.path.basename(fn))[0]
+        rootPath = "./analysis/"
+        rootPath += os.path.basename(os.path.dirname(fn)) + '/'
+        rootPath += os.path.splitext(os.path.basename(fn))[0]
+
         for i in xrange(1,4):
             ##Don't check invalid patterns
             if pattern == 'X':
                 break
             rkey = partNum + '-' + str(i)
-            if rlist[rkey] == pattern:
+            if rlist[rkey].pattern == pattern:
                 correct = True
                 break;
         if correct:
@@ -121,12 +135,15 @@ def recall(fn):
             ##save image to correct folder
             path = rootPath + "/correct/" + partNum + "pattern" + pattNum + ".bmp"
             print("Saving: " + path)
-            plistDraw[key].save(path)
+            plist[key].setImgPath(path) #save image path
+            plist[key].setRecall(1) #mark pattern as recalled
+            plist[key].img.save(path)
             #print("Correct!")
         else:
             path = rootPath + "/incorrect/" + partNum + "pattern" + pattNum + ".bmp"
             print("Saving: " + path)
-            plistDraw[key].save(path)
+            plist[key].setImgPath(path)
+            plist[key].img.save(path)
 
     print("Scores:")
     for partNum,correctNum in correctList.iteritems():
@@ -134,22 +151,57 @@ def recall(fn):
 
 
 def compromised(fn):
-    rootPath = "./analysis/3x3/" + os.path.splitext(os.path.basename(fn))[0] + "/compromised/"
+    rootPath = "./analysis/"
+    rootPath += os.path.basename(os.path.dirname(fn)) + '/'
+    rootPath += os.path.splitext(os.path.basename(fn))[0]
+    rootPath += "/compromised/"
     for k1,p in plist.iteritems():
         partNum = k1.split("-")[0] #participant number
         pattNum = k1.split("-")[1] #pattern number
         for k2,g in glist.iteritems():
-            if p!='X' and p == g:
+            if p!='X' and p.pattern == g.pattern:
                 print("Pattern Compromised!")
                 print("pattern: " + k1 + " guess: " + k2)
                 path = rootPath + partNum + "pattern" + pattNum + ".bmp"
-                plistDraw[k1].save(path)
                 print("Saving: " + path)
+                plist[k1].img.save(path)
+                plist[k1].setCompromised(1) #mark pattern as compromised
+
 
 def symmetry():
-    for key,p in plist.iteritems():
-        print horiz_symmetry(3,p)
+    for key_pattern in plist.iteritems():
+        key = key_pattern[0]
+        plist[key].setSymmetryH(horiz_symmetry(3,key_pattern))
+        plist[key].setSymmetryV(vert_symmetry(3,key_pattern))
+    for key_pattern in glist.iteritems():
+        key = key_pattern[0]
+        glist[key].setSymmetryH(horiz_symmetry(3,key_pattern))
+        glist[key].setSymmetryV(vert_symmetry(3,key_pattern))
+    for key_pattern in rlist.iteritems():
+        key = key_pattern[0]
+        rlist[key].setSymmetryH(horiz_symmetry(3,key_pattern))
+        rlist[key].setSymmetryV(vert_symmetry(3,key_pattern))
 
+def stroke():
+    for key_pattern in plist.iteritems():
+        key = key_pattern[0]
+        plist[key].setStroke(strokeLen(3,key_pattern))
+    for key_pattern in glist.iteritems():
+        key = key_pattern[0]
+        glist[key].setStroke(strokeLen(3,key_pattern))
+    for key_pattern in rlist.iteritems():
+        key = key_pattern[0]
+        rlist[key].setStroke(strokeLen(3,key_pattern))
+
+def compute_metrics():
+    print("*** Computing symmetry...")
+    symmetry()
+    print("*** Done.")
+
+    print("*** Computing stroke...")
+    stroke()
+    print("*** Done.")
+        
 ###END FUCTIONS###
 
 
@@ -177,6 +229,9 @@ def main(fn):
                 storeGrid(im, row,col)
     print("Done.\n")
 
+    ###Save Guesses
+    saveGuess(fn)
+
     #$print(plistDraw.keys())
 
 
@@ -191,8 +246,15 @@ def main(fn):
     compromised(fn)
     print("Done.\n")
 
-    ###Compute and record symmetry
-    symmetry()
+    ###Compute metrics for anaylsis...
+    print("\nComputing metrics...")
+    compute_metrics()
+    print("Done.\n")
+
+    ### Record data to CSV
+    print("\nWriting data to csv...")
+    record_CSV(fn,plist.values()+glist.values()+rlist.values())
+    print("Done.\n")
 
     ##Parse Questions Somehow...
 

@@ -1,0 +1,72 @@
+class Pattern:
+    def __init__(self,pType,pattern,img):
+        self.pType = pType
+        self.pattern = pattern
+        self.length = len(pattern.split('.'))
+        self.compromised = 0
+        self.recall = 0
+        self.symmetryH = 0.0
+        self.symmetryV = 0.0
+        self.img = img
+        self.imgPath = ''
+        self.stroke = 0
+        self.direction = 0
+
+    def setPattern(self, pattern):
+        self.pattern = pattern
+    def setType(self, pType):
+        self.pType = pType
+    def setCompromised(self, c):
+        self.compromised = c
+    def setRecall(self, r):
+        self.recall = r
+    def setSymmetryH(self, s):
+        self.symmetryH = s
+    def setSymmetryV(self, s):
+        self.symmetryV = s
+    def setImgPath(self,imPath):
+        self.imgPath = imPath
+    def setDirection(self,direction):
+        self.direction = direction
+    def setStroke(self,stroke):
+        self.stroke = stroke
+
+    ##for writing to csv
+    def writerow(self):
+        ret = {}
+        ret['type'] = self.pType
+        ret['pattern'] = self.pattern
+        ret['compromised'] = self.compromised
+        ret['recall'] = self.recall
+        ret['symmetryH'] = self.symmetryH
+        ret['symmetryV'] = self.symmetryV
+        ret['length'] = self.length
+        arr = self.pattern.split('.')
+        ret['start'] = arr[0]
+        ret['end'] = arr[-1]
+        ret['stroke'] = self.stroke
+        ret['direction'] = self.direction
+        ret['image'] = self.imgPath
+        return ret
+
+    def __str__(self):
+        s = "type: " + str(self.pType)
+        s += "\npattern: " + str(self.pattern)
+        s += "\nlength: " + str(self.length)
+        s += "\ncompromised: " + str(self.compromised)
+        s += "\nrecall: " + str(self.recall)
+        s += "\nsymmetryH: " + str(self.symmetryH)
+        s += "\nsymmetryV: " + str(self.symmetryV)
+        s += "\nimgPath: " + self.imgPath
+        s += "\ndirection: " + str(self.direction)
+        s += "\nstroke: " + str(self.stroke)
+        return s
+
+def main():
+    p = Pattern('g',"0.1","picture!")
+    print p
+    print p.pattern
+    print p.writerow()
+
+if(__name__ == "__main__"):    
+   main()
