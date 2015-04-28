@@ -31,11 +31,15 @@ def main(argv):
             
     counter = collections.Counter(patternList)
     
+    i = 1
     for patt in counter.most_common(5):
         print patt
         print pattern_image[patt[0]]
         im = Image.open(pattern_image[patt[0]])
         im.show()
+        path = "./analysis/common/" + s + '-' + str(i) + ".bmp"
+        im.save(path)
+        i += 1
 
 if(__name__ == "__main__"):    
    main(sys.argv[1:])
