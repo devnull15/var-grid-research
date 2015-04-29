@@ -1,0 +1,45 @@
+###
+## Counts responses to MC questions
+##
+## D.E.Budzitowski 150876
+###
+
+import Image, csv, sys
+
+def main(argv):
+    ##Check args
+    if len(argv) is not 1:
+        exit("Not enough (or too many) args!")
+    size = int(argv[0])
+    if size is not 3 and size is not 4:
+        exit("Size: " + str(size) + "not supported!")
+
+    ## Path to file
+    s = str(size) + "x" + str(size)
+    csvpath = "./analysis/" + s + "/" + s + "_data.csv"
+
+    ## Counters
+    comp = 0
+    patternCounter = 0
+
+    ## Find the compromises!
+    with open(csvpath) as csvfile:
+        patternreader = csv.DictReader(csvfile)
+        for pattern in patternreader:
+            patternCounter += 1
+            if pattern['type'] is "p":
+                csvfile2 = open(csvpath)
+                guessreader = csv.DictReader(csvfile2)
+                for guess in guessreader:
+                    if guess['type'] is "g" and pattern['pattern'] == guess['pattern']:
+                        #print "Compromised!"
+                        comp += 1
+                        break
+
+    ## Print Stats
+    print "# Compromised = " + str(comp)
+    percent = float(comp) / float(patternCounter) * 100
+    print str(percent) + "%"
+
+if(__name__ == "__main__"):
+   main(sys.argv[1:])
